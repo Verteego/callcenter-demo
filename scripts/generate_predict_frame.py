@@ -1,32 +1,51 @@
 import pandas as pd
-from datetime import date, datetime, timedelta
-from os import makedirs
-from os.path import exists
-import csv
-from random import randint
-from time import time
+from datetime import date, timedelta, datetime
 import argparse
-import logging
 
-calls_hour_output_path = "/home/schiessl/Verteego/demos/callcenter-demo/data/ml-predict/predict-calls-hour.csv"
+# set possible arguments
+parser = argparse.ArgumentParser(description="Predict y depending on x")
+parser.add_argument('--nb_days', '-n', help="Number of days of the prediction.", action="store", type=int, default=1)
+parser.add_argument('--date', '-d', help="Date of the first day of the forecast", action="store",
+                    default=date.today())
+parser.add_argument('--start_hour', '-s', help="First hour of the day.", action="store", type=int, default=0)
+parser.add_argument('--end_hour', '-e', help="Last hour of the day.", action="store", type=int, default=23)
+parser.add_argument('--mode', '-m', help="Prediction mode. use 'default', 'priority' or 'reason' ", action="store", default="default")
 
-first_day_to_predict = date.today()
-nb_days_to_predict = 30
-hours_range = range(0,24)
-priority_list = [0, 1, 2]
-reason_list = []
+# parse arguments
+args = parser.parse_args()
 
-#weekdays config
+# parse date from string if necessary
+args.date = datetime.strptime(str(args.date), "%Y-%m-%d")
+
+#output path
+calls_hour_output_path = "/home/schiessl/Verteego/demos/callcenter-demo/data/ml-predict/"
+
+# weekdays config
 weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
+# lists of items to be used
+lists = {
+    "default" : [0],
+    "priority" : [0, 1, 2],
+    "reason" : ["TT", "AA", "IN", "NE", "NW", "PE", "PS"]
+}
 
-date_range = pd.date_range(start=first_day_to_predict, end=first_day_to_predict + timedelta(days=nb_days_to_predict),freq="H")
-df = pd.DataFrame(index=date_range)
-df["year"] = df.index.year
-df["month"] = df.index.month
-df["day"] = df.index.day
-df["weekday"] = df.index.weekday
-df["weekday"] = df["weekday"].map(lambda x: weekdays[x])
-df["hour"] = df.index.hour
-df.to_csv(calls_hour_output_path, index=False)
+# generate all data frames
+df = {}
+for i in lists[args.mode]:
+    df[i] = pd.DataFrame(index=pd.date_range(start=args.date, end=args.date + timedelta(days=args.nb_days),freq="H", closed="left"))
+    df[i]["year"] = df[i].index.year
+    df[i]["month"] = df[i].index.month
+    df[i]["day"] = df[i].index.day
+    df[i]["weekday"] = df[i].index.weekday
+    df[i]["weekday"] = df[i]["weekday"].map(lambda x: weekdays[x])
+    df[i]["hour"] = df[i].index.hour
+    df[i][args.mode] = i
 
+#merge data frames
+df_final = pd.concat([value for value in df.itervalues()])
+
+#write to csv
+df_final.to_csv(calls_hour_output_path + "predict-calls-" + args.mode + ".csv", index=False)
+
+print df_final

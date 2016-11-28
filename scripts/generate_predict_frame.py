@@ -34,14 +34,15 @@ lists = {
 df = {}
 for i in lists[args.mode]:
     df[i] = pd.DataFrame(index=pd.date_range(start=args.date, end=args.date + timedelta(days=args.nb_days),freq="H", closed="left"))
-    df[i]["nb_calls"] = 0
+    #df[i]["nb_calls"] = 0
+    df[i][args.mode] = i
     df[i]["year"] = df[i].index.year
     df[i]["month"] = df[i].index.month
     df[i]["day"] = df[i].index.day
     df[i]["weekday"] = df[i].index.weekday
     df[i]["weekday"] = df[i]["weekday"].map(lambda x: weekdays[x])
     df[i]["hour"] = df[i].index.hour
-    df[i][args.mode] = i
+
 
 #merge data frames
 df_final = pd.concat([value for value in df.itervalues()])

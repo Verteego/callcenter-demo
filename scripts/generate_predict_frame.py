@@ -34,6 +34,7 @@ lists = {
 df = {}
 for i in lists[args.mode]:
     df[i] = pd.DataFrame(index=pd.date_range(start=args.date, end=args.date + timedelta(days=args.nb_days),freq="H", closed="left"))
+    df[i]["nb_calls"] = 0
     df[i]["year"] = df[i].index.year
     df[i]["month"] = df[i].index.month
     df[i]["day"] = df[i].index.day
